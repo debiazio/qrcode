@@ -1,31 +1,84 @@
-<html>
-    <head>
-        <title>ScanQRCODE</title>
-    </head>
-    <body>
-        <video id="webcam"></video>
+<!DOCTYPE html>
+<html lang="en">
 
-        
-        <script type="text/javascript" src="pasta/instascan.min.js"></script>
-        <video id="preview"></video>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScanQRCODE</title>
+  <style>
+    #webcam {
+      width: 300px;
+      height: 400px;
+      outline: 1px solid red;
+    }
 
-        <script>
-        document.addEventListener("DOMContentLoaded", event => {
-          let scanner = new Instascan.Scanner({ video: document.getElementById('preview') });
-          Instascan.Camera.getCameras().then(cameras => {
-            scanner.camera = cameras[cameras.length - 1];
-            console.log(cameras)
-            scanner.start();
-          }).catch(e => console.error(e));
-        
-          scanner.addListener('scan', content => {
-            alert('teste' + content);
-            window.open(content, "_blank");
-          });
-        
-        });
-          
-        </script>
-    </body>
+    #resultado {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    #aviso {
+      color: red;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Aponte a câmera para o código</h1>
+  <video id="webcam"></video>
+  <div id="resultado"></div>
+  <div id="aviso"></div>
+
+  <script type="text/javascript" src="instascan.min.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", event => {
+      let scanner = new Instascan.Scanner({ video: document.getElementById('webcam'), mirror: false });
+      let avisoTimeout;
+
+      Instascan.Camera.getCameras().then(cameras => {
+        if (cameras.length > 0) {
+          scanner.camera = cameras[cameras.length - 1];
+          console.log(cameras);
+          scanner.start();
+          iniciarAvisoTimeout();
+        } else {
+          console.error('No cameras found.');
+        }
+      }).catch(e => console.error(e));
+
+      scanner.addListener('scan', content => {
+        console.log('Teste leitor QRCode:', content);
+        document.querySelector('#resultado').innerHTML = 'Conteúdo QRCode: ' + content;
+        reiniciarAvisoTimeout(); // Reseta o temporizador após uma leitura bem-sucedida
+        limparAviso(); // Limpa a mensagem de aviso
+      });
+
+      function iniciarAvisoTimeout() {
+        avisoTimeout = setTimeout(function() {
+          if (!document.querySelector('#resultado').innerHTML) {
+            // Exibir aviso somente se não houve leitura bem-sucedida
+            exibirAviso('Tempo limite excedido. Nenhuma leitura realizada.');
+          }
+        }, 15000); // 15000 milissegundos = 15 segundos
+      }
+
+      function reiniciarAvisoTimeout() {
+        clearTimeout(avisoTimeout);
+        iniciarAvisoTimeout();
+      }
+
+      function exibirAviso(mensagem) {
+        document.querySelector('#aviso').innerHTML = mensagem;
+      }
+
+      function limparAviso() {
+        document.querySelector('#aviso').innerHTML = '';
+      }
+    });
+  </script>
+</body>
+
 </html>
-
